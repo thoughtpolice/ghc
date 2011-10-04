@@ -89,6 +89,18 @@ AC_ARG_WITH([ghc],
   fi
   WithGhc="$GHC"])
 
+dnl ** Which llvm-config are we going to use to compile 
+dnl any optional plugins?
+AC_ARG_WITH([llvm-config],
+[AC_HELP_STRING([--with-llvm-config=ARG],
+  [Use ARG as the path to llvm-config ])],
+  [WithLlvmConfig="$withval"],
+  [if test "$LLVM_CONFIG" = ""; then
+    AC_PATH_PROG([LLVM_CONFIG], [llvm-config], [NONE])
+  fi
+  WithLlvmConfig="$LLVM_CONFIG"])
+
+AC_SUBST(WithLlvmConfig)  
 
 dnl ** Tell the make system which OS we are using
 dnl $OSTYPE is set by the operating system to "msys" or "cygwin" or something 

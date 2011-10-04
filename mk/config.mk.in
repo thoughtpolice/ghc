@@ -539,6 +539,11 @@ GhcCanonVersion = $(GhcMajVersion)$(GhcMinVersion)
 endif
 
 #-----------------------------------------------------------------------------
+# llvm-config
+
+WithLlvmConfig = @WithLlvmConfig@
+
+#-----------------------------------------------------------------------------
 # C compiler
 #
 # NB. Don't override $(WhatGccIsCalled) using build.mk,  re-configure using

@@ -618,6 +618,7 @@ BUILD_DIRS += \
    $(GHC_CABAL_DIR) \
    utils/hpc \
    utils/runghc \
+   llvm/aa-plugin \
    ghc
 ifeq "$(Windows)" "YES"
 BUILD_DIRS += \
