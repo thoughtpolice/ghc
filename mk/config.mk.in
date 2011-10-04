@@ -543,6 +543,16 @@ endif
 
 WithLlvmConfig = @WithLlvmConfig@
 
+ifneq "$(WithLlvmConfig)" "NONE"
+LlvmLibDir=$(shell $(WithLlvmConfig) --libdir)
+LlvmIncDir=$(shell $(WithLlvmConfig) --includedir)
+LlvmLibOpts=$(shell $(WithLlvmConfig) --libs)
+else
+LlvmLibDir=
+LlvmIncdir=
+LlvmLibOpts=
+endif
+
 #-----------------------------------------------------------------------------
 # C compiler
 #

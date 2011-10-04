@@ -199,6 +199,7 @@ include rules/includes-sources.mk
 include rules/hs-objs.mk
 include rules/c-objs.mk
 include rules/cmm-objs.mk
+include rules/llvm-plugin.mk
 
 # -----------------------------------------------------------------------------
 # Suffix rules

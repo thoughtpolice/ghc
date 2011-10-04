@@ -237,3 +237,7 @@ _darcs/
 
 
 /extra-gcc-opts
+
+/llvm/*/*.so
+/llvm/*/*.dll
+/llvm/*/*.dylib
