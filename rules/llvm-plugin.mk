@@ -44,6 +44,8 @@ ifeq "$$(WithLlvmConfig)" "NONE"
 $1_$2_BLDDEP = 
 endif
 
+INSTALL_LIBS += $$($1_$2_BLDDEP)
+
 all_$1 : $$($1_$2_BLDDEP)
 
 $$($1_$2_OUT) : $$($1_$2_CPP_FILES)
