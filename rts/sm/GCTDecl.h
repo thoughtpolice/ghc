@@ -24,11 +24,63 @@
 
 #if defined(THREADED_RTS)
 
+#define USE_OSX_FAST_TLS 1
+
+/** The following code is snipped from Apple libc; pthreads/pthread_machdep.h */
+#if (defined(llvm_CC_FLAVOR) || defined(clang_CC_FLAVOR)) && \
+     defined(darwin_HOST_OS)                              && \
+     defined(USE_OSX_FAST_TLS)
+
+/** Steal JavaScriptCore Key #5 */
+#define __PTK_FRAMEWORK_JAVASCRIPTCORE_KEY4 94
+
+INLINE_HEADER void* _pthread_getspecific_direct(unsigned long slot) {
+  void* ret;
+#if defined(__i386__) || defined(__x86_64__)
+  __asm__( "mov %%gs:%1, %0"
+         : "=r" (ret)
+         : "m" (*(void **)(slot * sizeof(void *))));
+#else
+#error "No definition of pthread_getspecific_direct!"
+#endif
+  return ret;
+}
+
+INLINE_HEADER int _pthread_setspecific_direct(unsigned long slot, void * val)
+{
+#if defined(__i386__)
+#if defined(__PIC__)
+  __asm__( "movl %1,%%gs:%0"
+	 : "=m" (*(void **)(slot * sizeof(void *)))
+	 : "rn" (val));
+#else
+  __asm__( "movl %1,%%gs:%0"
+         : "=m" (*(void **)(slot * sizeof(void *)))
+         : "ri" (val));
+#endif
+#elif defined(__x86_64__)
+  /* PIC is free and cannot be disabled, even with: gcc -mdynamic-no-pic ... */
+  __asm__( "movq %1,%%gs:%0"
+         : "=m" (*(void **)(slot * sizeof(void *)))
+         : "rn" (val));
+#else
+#error "No definition of _pthread_setspecific_direct!"
+#endif
+  return 0;
+}
+#endif /* OS X specific hacks.*/
+
+
 #define GLOBAL_REG_DECL(type,name,reg) register type name REG(reg);
 
-#ifdef llvm_CC_FLAVOR
+#if defined(llvm_CC_FLAVOR) || defined(clang_CC_FLAVOR)
+#if defined(USE_OSX_FAST_TLS) && defined(darwin_HOST_OS)
+#define SET_GCT(to) (_pthread_setspecific_direct(gctKey, to))
+#else // USE_OSX_FAST_TLS/darwin_HOST_OS
+// Fallback to (very slow) pthread routines
 #define SET_GCT(to) (pthread_setspecific(gctKey, to))
-#else
+#endif
+#else // llvm_CC_FLAVOR/clang_CC_FLAVOR
 #define SET_GCT(to) gct = (to)
 #endif
 
@@ -46,13 +98,18 @@
 extern __thread gc_thread* gct;
 #define DECLARE_GCT __thread gc_thread* gct;
 
-#elif defined(llvm_CC_FLAVOR)
-// LLVM does not support the __thread extension and will generate
-// incorrect code for global register variables. If we are compiling
-// with a C compiler that uses an LLVM back end (clang or llvm-gcc) then we
-// use pthread_getspecific() to handle the thread local storage for gct.
+#elif defined(llvm_CC_FLAVOR) || defined(clang_CC_FLAVOR)
+
+#if defined(USE_OSX_FAST_TLS) && defined(darwin_HOST_OS)
+#define gct ((gc_thread *)(_pthread_getspecific_direct(gctKey)))
+#define DECLARE_GCT ThreadLocalKey gctKey = \
+    __PTK_FRAMEWORK_JAVASCRIPTCORE_KEY4;
+
+#else // USE_OSX_FAST_TLS/darwin_HOST_OS
+// Fallback to (very slow) pthread routines
 #define gct ((gc_thread *)(pthread_getspecific(gctKey)))
 #define DECLARE_GCT ThreadLocalKey gctKey;
+#endif
 
 #elif defined(sparc_HOST_ARCH)
 // On SPARC we can't pin gct to a register. Names like %l1 are just offsets

@@ -200,10 +200,9 @@ typedef struct gc_thread_ {
 
 
 extern nat n_gc_threads;
-
 extern gc_thread **gc_threads;
 
-#if defined(THREADED_RTS) && defined(llvm_CC_FLAVOR)
+#if defined(THREADED_RTS) && (defined(llvm_CC_FLAVOR) || defined(clang_CC_FLAVOR))
 extern ThreadLocalKey gctKey;
 #endif
 
